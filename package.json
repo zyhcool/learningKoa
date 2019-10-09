@@ -1,0 +1,11 @@
+{
+  "name": "learningKoa",
+  "version": "1.0.0",
+  "description": "just for learning Koa source code",
+  "main": "app.js",
+  "author": "zyh",
+  "license": "MIT",
+  "scripts": {
+    "start": "nodemon app.js"
+  }
+}
