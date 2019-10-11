@@ -8,13 +8,13 @@ const Stream = require("stream");
 class Koa extends event.EventEmitter {
     constructor() {
         super();
-        this.fn;
         this.context = context;
         this.request = request;
         this.response = response;
+        this.middlewares = [];
     }
     use(fn) {
-        this.fn = fn;
+        this.middlewares.push(fn);
     }
     listen(...args) {
         const server = http.createServer(this.handleRequest.bind(this));
@@ -33,19 +33,36 @@ class Koa extends event.EventEmitter {
     }
     handleRequest(req, res) {
         let ctx = this.createContext(req, res);
-        this.fn(ctx);
-        if (typeof ctx.body == 'object') {
-            res.setHeader('Content-Type', 'application/json;charset=utf8')
-            res.end(JSON.stringify(ctx.body))
-        } else if (ctx.body instanceof Stream) {
-            ctx.body.pipe(res)
+        let fn = this.compose(this.middlewares, ctx);
+        fn.then((value) => {
+            if (typeof ctx.body == 'object') {
+                res.setHeader('Content-Type', 'application/json;charset=utf8')
+                res.end(JSON.stringify(ctx.body))
+            } else if (ctx.body instanceof Stream) {
+                ctx.body.pipe(res)
+            }
+            else if (typeof ctx.body === 'string' || Buffer.isBuffer(ctx.body)) {
+                res.setHeader('Content-Type', 'text/html; charset=utf8')
+                res.end(ctx.body)
+            } else {
+                res.end('Not found')
+            }
+        })
+            .catch((err) => {
+                this.emit(err);
+                res.statusCode = 500;
+                res.end("Internal Error");
+            })
+    }
+    compose(middlewares, ctx) {
+        function dipatch(index) {
+            if (index === middlewares) {
+                return;
+            }
+            let middleware = middlewares[index];
+            return Promise.resolve(middleware(ctx, () => dipatch(index + 1)));
         }
-        else if (typeof ctx.body === 'string' || Buffer.isBuffer(ctx.body)) {
-            res.setHeader('Content-Type', 'text/html; charset=utf8')
-            res.end(ctx.body)
-        } else {
-            res.end('Not found')
-        }
+        return dipatch(0);
     }
 }
 

@@ -2,11 +2,12 @@ const Koa = require("./src/application");
 
 let app = new Koa();
 
-app.use((ctx) => {
+app.use(async (ctx, next) => {
     ctx.body = {
         code: 0,
         data: "hello world",
     }
+    await next();
     console.log(ctx.body);
 })
 
