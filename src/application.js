@@ -57,7 +57,7 @@ class Koa extends event.EventEmitter {
     compose(middlewares, ctx) {
         function dipatch(index) {
             if (index === middlewares) {
-                return;
+                return Promise.resolve();
             }
             let middleware = middlewares[index];
             return Promise.resolve(middleware(ctx, () => dipatch(index + 1)));
